@@ -52,7 +52,7 @@ func opMultiply(program []int, offset int, param1mode, param2mode mode) int {
 }
 
 func opInput(program []int, offset int, param1mode mode) int {
-	writeToProgram(program, offset, 1, 1)
+	writeToProgram(program, offset, 1, 5)
 	return 2
 }
 
@@ -60,6 +60,50 @@ func opOutput(program []int, offset int, param1mode mode) int {
 	param1 := loadParam(program, offset, 1, param1mode)
 	fmt.Printf("%d ", param1)
 	return 2
+}
+
+func opJumpIfTrue(program []int, offset int, param1mode, param2mode mode) int {
+	param1 := loadParam(program, offset, 1, param1mode)
+	param2 := loadParam(program, offset, 2, param2mode)
+
+	if param1 != 0 {
+		return param2 - offset
+	}
+	return 3
+}
+
+func opJumpIfFalse(program []int, offset int, param1mode, param2mode mode) int {
+	param1 := loadParam(program, offset, 1, param1mode)
+	param2 := loadParam(program, offset, 2, param2mode)
+
+	if param1 == 0 {
+		return param2 - offset
+	}
+	return 3
+}
+
+func opLessThan(program []int, offset int, param1mode, param2mode mode) int {
+	param1 := loadParam(program, offset, 1, param1mode)
+	param2 := loadParam(program, offset, 2, param2mode)
+
+	if param1 < param2 {
+		writeToProgram(program, offset, 3, 1)
+	} else {
+		writeToProgram(program, offset, 3, 0)
+	}
+	return 4
+}
+
+func opEquals(program []int, offset int, param1mode, param2mode mode) int {
+	param1 := loadParam(program, offset, 1, param1mode)
+	param2 := loadParam(program, offset, 2, param2mode)
+
+	if param1 == param2 {
+		writeToProgram(program, offset, 3, 1)
+	} else {
+		writeToProgram(program, offset, 3, 0)
+	}
+	return 4
 }
 
 func runOpcode(program []int, offset int) int {
@@ -86,9 +130,17 @@ func runOpcode(program []int, offset int) int {
 		return opInput(program, offset, params[0])
 	case "04": // output
 		return opOutput(program, offset, params[0])
+	case "05": // jump-if-true
+		return opJumpIfTrue(program, offset, params[0], params[1])
+	case "06": // jump-if-false
+		return opJumpIfFalse(program, offset, params[0], params[1])
+	case "07": // less than
+		return opLessThan(program, offset, params[0], params[1])
+	case "08": // equals
+		return opEquals(program, offset, params[0], params[1])
 	case "99": // halt
 		fmt.Println("\nProgram Halted.")
-		return -1
+		return 0
 	default:
 		panic(fmt.Errorf("Unknown opcode %s", opcode))
 	}
@@ -97,7 +149,7 @@ func runOpcode(program []int, offset int) int {
 func run(program []int) {
 	for offset := 0; offset < len(program); {
 		space := runOpcode(program, offset)
-		if space == -1 {
+		if space == 0 {
 			break
 		}
 
