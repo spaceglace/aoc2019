@@ -1,0 +1,6 @@
+# Ignore executables with no extensions
+*
+!*.*
+!*/
+
+.vscode
