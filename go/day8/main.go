@@ -32,6 +32,49 @@ func verifyImage(input [][]string, width, height int) int {
 	return result
 }
 
+func displayImage(input []string, width, height int) {
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			if input[y*width+x] == "0" {
+				fmt.Printf("█")
+			} else {
+				fmt.Printf(" ")
+			}
+		}
+		fmt.Printf("\n")
+	}
+}
+
+func decodeImage(input [][]string, width, height int) {
+	// generate a base transparent image
+	output := []string{}
+	for y := 0; y < height; y++ {
+		for x := 0; x < width; x++ {
+			output = append(output, "2")
+		}
+	}
+
+	// iterate over every layer front to back
+	for _, layer := range input {
+		for y := 0; y < height; y++ {
+			for x := 0; x < width; x++ {
+				cell := y*width + x
+				// ignore if we've already coloured this cell
+				if output[cell] != "2" {
+					continue
+				}
+
+				// if this layer has colour fill in our image
+				if layer[cell] != "2" {
+					output[cell] = layer[cell]
+				}
+			}
+		}
+	}
+
+	displayImage(output, width, height)
+}
+
 func main() {
 	input := readInput("./input/input.txt")
 	width := 25
@@ -43,4 +86,5 @@ func main() {
 	}
 
 	fmt.Println("Verification Code:", verifyImage(output, width, height))
+	decodeImage(output, width, height)
 }
