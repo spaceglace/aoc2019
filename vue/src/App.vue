@@ -44,7 +44,7 @@ export default {
       {
         name: 'Day 1',
         link: '/day1',
-        color: colors.silver,
+        color: colors.gold,
       },
     ],
   }),

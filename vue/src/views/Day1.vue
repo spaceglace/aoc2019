@@ -1,20 +1,28 @@
 <template>
   <v-container>
     <v-row justify="space-around">
+      <v-col cols="12" sm="6">
+        <v-btn
+          rounded
+          block
+          color="primary"
+          class="mt-5"
+          @click="parse"
+        >Load Data</v-btn>
+      </v-col>
+    </v-row>
+    <v-row justify="space-around">
       <v-col cols="12" sm="5">
-        <v-btn class="mt-5" @click="parse">Load Data</v-btn>
-        <div class="title font-weight-light mt-5">
-          Total module count: <span class="font-weight-bold">{{ moduleCount }}</span>
-        </div>
-        <div class="title font-weight-light mt-3">
-          Total fuel: <span class="font-weight-bold">{{ fuelSum }}</span>
-        </div>
+        <part-one
+          class="mt-5"
+          :modules="modules"
+        ></part-one>
       </v-col>
       <v-col cols="12" sm="5">
-        <v-data-table
-          :headers="headers"
-          :items="modules"
-        ></v-data-table>
+        <part-two
+          class="mt-5"
+          :modules="modules"
+        ></part-two>
       </v-col>
     </v-row>
   </v-container>
@@ -23,48 +31,23 @@
 <script>
 // eslint-disable-next-line import/no-webpack-loader-syntax
 import data from 'raw-loader!../input/day1/input.txt';
+import partOne from '../components/day1/part1.vue';
+import partTwo from '../components/day1/part2.vue';
 
 export default {
+  components: {
+    partOne,
+    partTwo,
+  },
   data: () => ({
     modules: [],
-    headers: [
-      {
-        text: 'Module #',
-        align: 'left',
-        value: 'index',
-      },
-      {
-        text: 'Mass',
-        align: 'left',
-        value: 'mass',
-      },
-      {
-        text: 'Needed Fuel',
-        align: 'left',
-        value: 'fuel',
-      },
-    ],
   }),
-  computed: {
-    moduleCount() {
-      return this.modules.length;
-    },
-    fuelSum() {
-      return this.modules.reduce((acc, cur) => acc + cur.fuel, 0);
-    },
-  },
   methods: {
-    calculateFuel(mass) {
-      return Math.floor(mass / 3) - 2;
-    },
     parse() {
-      data.split('\n').forEach((line, index) => {
+      this.modules = [];
+      data.split('\n').forEach((line) => {
         const mass = parseInt(line, 10);
-        this.modules.push({
-          index: index + 1,
-          mass,
-          fuel: this.calculateFuel(mass),
-        });
+        this.modules.push(mass);
       });
     },
   },
