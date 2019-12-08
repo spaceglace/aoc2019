@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"sync"
 )
 
 type mode int
@@ -51,14 +52,18 @@ func opMultiply(program []int, offset int, param1mode, param2mode mode) int {
 	return 4
 }
 
-func opInput(program []int, offset, value int, param1mode mode) int {
+func opInput(name string, program []int, offset int, param1mode mode, input chan int) int {
+	value := <-input
+	// log.Printf("%s recieves %d\n", name, value)
 	writeToProgram(program, offset, 1, value)
 	return 2
 }
 
-func opOutput(program []int, offset int, param1mode mode) int {
+func opOutput(name string, program []int, offset int, param1mode mode, output chan int) int {
 	param1 := loadParam(program, offset, 1, param1mode)
-	return param1
+	// log.Printf("%s sends %d\n", name, param1)
+	output <- param1
+	return 2
 }
 
 func opJumpIfTrue(program []int, offset int, param1mode, param2mode mode) int {
@@ -105,7 +110,7 @@ func opEquals(program []int, offset int, param1mode, param2mode mode) int {
 	return 4
 }
 
-func runOpcode(program, inputs []int, offset int, inputOffset *int) (int, bool) {
+func runOpcode(name string, program []int, offset int, input, output chan int) int {
 	opcode := "0000000000" + strconv.Itoa(program[offset])
 
 	params := []mode{}
@@ -122,39 +127,34 @@ func runOpcode(program, inputs []int, offset int, inputOffset *int) (int, bool) 
 
 	switch opcode[len(opcode)-2:] {
 	case "01": // addition
-		return opAdd(program, offset, params[0], params[1]), false
+		return opAdd(program, offset, params[0], params[1])
 	case "02": // multiplication
-		return opMultiply(program, offset, params[0], params[1]), false
+		return opMultiply(program, offset, params[0], params[1])
 	case "03": // input
-		val := opInput(program, offset, inputs[*inputOffset], params[0])
-		*inputOffset++
-		return val, false
+		return opInput(name, program, offset, params[0], input)
 	case "04": // output
-		return opOutput(program, offset, params[0]), true
+		return opOutput(name, program, offset, params[0], output)
 	case "05": // jump-if-true
-		return opJumpIfTrue(program, offset, params[0], params[1]), false
+		return opJumpIfTrue(program, offset, params[0], params[1])
 	case "06": // jump-if-false
-		return opJumpIfFalse(program, offset, params[0], params[1]), false
+		return opJumpIfFalse(program, offset, params[0], params[1])
 	case "07": // less than
-		return opLessThan(program, offset, params[0], params[1]), false
+		return opLessThan(program, offset, params[0], params[1])
 	case "08": // equals
-		return opEquals(program, offset, params[0], params[1]), false
+		return opEquals(program, offset, params[0], params[1])
 	case "99": // halt
-		fmt.Println("\nProgram Halted.")
-		return 0, false
+		// fmt.Printf("%s halted\n", name)
+		return 0
 	default:
 		panic(fmt.Errorf("Unknown opcode %s", opcode))
 	}
 }
 
-func run(program, inputs []int) int {
-	inputOffset := 0
-	for offset := 0; offset < len(program); {
-		space, output := runOpcode(program, inputs, offset, &inputOffset)
+func run(program []int, input, output chan int, name string, wg *sync.WaitGroup) {
+	defer wg.Done()
 
-		if output {
-			return space
-		}
+	for offset := 0; offset < len(program); {
+		space := runOpcode(name, program, offset, input, output)
 
 		if space == 0 {
 			break
@@ -162,6 +162,5 @@ func run(program, inputs []int) int {
 
 		offset += space
 	}
-	fmt.Println("Program Finished.")
-	return 0
+	// fmt.Println("Program Finished.")
 }
